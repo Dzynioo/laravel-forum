@@ -120,6 +120,9 @@ class ForumServiceProvider extends ServiceProvider
             $loader->alias('Forum', config('forum.frontend.utility_class'));
         }
 
+        // TODO: Put this behind a feature flag
+        $this->enableBroadcasting();
+
         $this->loadTranslationsFrom(__DIR__ . '/../translations', 'forum');
 
         $this->registerPolicies($gate);
@@ -169,6 +172,11 @@ class ForumServiceProvider extends ServiceProvider
         $router->group($config, function ($router) {
             $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
         });
+    }
+
+    private function enableBroadcasting()
+    {
+        require(__DIR__ . '/../routes/channels.php');
     }
 
     private function registerPolicies(GateContract $gate): void
