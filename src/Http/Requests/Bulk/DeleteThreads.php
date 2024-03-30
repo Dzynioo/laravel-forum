@@ -3,43 +3,28 @@
 namespace TeamTeaTime\Forum\Http\Requests\Bulk;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\Bulk\DeleteThreads as Action;
-use TeamTeaTime\Forum\Events\UserBulkDeletedThreads;
-use TeamTeaTime\Forum\Http\Requests\Traits\AuthorizesAfterValidation;
-use TeamTeaTime\Forum\Http\Requests\Traits\HandlesDeletion;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
-use TeamTeaTime\Forum\Models\Thread;
-use TeamTeaTime\Forum\Support\CategoryPrivacy;
+use TeamTeaTime\Forum\{
+    Actions\Bulk\DeleteThreads as Action,
+    Events\UserBulkDeletedThreads,
+    Http\Requests\Traits\AuthorizesAfterValidation,
+    Http\Requests\FulfillableRequestInterface,
+    Support\Authorization\ThreadAuthorization,
+    Support\Validation\ThreadRules,
+    Support\Traits\HandlesDeletion,
+};
 
-class DeleteThreads extends FormRequest implements FulfillableRequest
+class DeleteThreads extends FormRequest implements FulfillableRequestInterface
 {
     use AuthorizesAfterValidation, HandlesDeletion;
 
     public function rules(): array
     {
-        return [
-            'threads' => ['required', 'array'],
-            'permadelete' => ['boolean'],
-        ];
+        return ThreadRules::bulkDelete();
     }
 
     public function authorizeValidated(): bool
     {
-        // Eloquent is used here so that we get a collection of Thread instead of
-        // stdClass in order for the gate to infer the policy to use.
-        $threads = Thread::whereIn('id', $this->validated()['threads'])->with('category')->get();
-        $accessibleCategoryIds = CategoryPrivacy::getFilteredFor($this->user())->keys();
-
-        foreach ($threads as $thread) {
-            $canView = $accessibleCategoryIds->contains($thread->category_id) && $this->user()->can('view', $thread);
-            $canDelete = $this->user()->can('deleteThreads', $thread->category) && $this->user()->can('delete', $thread);
-
-            if (! ($canView && $canDelete)) {
-                return false;
-            }
-        }
-
-        return true;
+        return ThreadAuthorization::bulkDelete($this->user(), $this->validated()['threads']);
     }
 
     public function fulfill()
@@ -47,7 +32,7 @@ class DeleteThreads extends FormRequest implements FulfillableRequest
         $action = new Action(
             $this->validated()['threads'],
             $this->user()->can('viewTrashedPosts'),
-            $this->isPermaDeleting()
+            $this->shouldPermaDelete(isset($this->validated()['permadelete']) && $this->validated()['permadelete'])
         );
         $threads = $action->execute();
 

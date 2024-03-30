@@ -3,22 +3,23 @@
 namespace TeamTeaTime\Forum\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\CreatePost as Action;
-use TeamTeaTime\Forum\Events\UserCreatedPost;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
+use TeamTeaTime\Forum\{
+    Actions\CreatePost as Action,
+    Events\UserCreatedPost,
+    Support\Authorization\ThreadAuthorization,
+    Support\Validation\PostRules,
+};
 
-class CreatePost extends FormRequest implements FulfillableRequest
+class CreatePost extends FormRequest implements FulfillableRequestInterface
 {
     public function authorize(): bool
     {
-        return $this->user()->can('reply', $this->route('thread'));
+        return ThreadAuthorization::reply($this->user(), $this->route('thread'));
     }
 
     public function rules(): array
     {
-        return [
-            'content' => ['required', 'string', 'min:'.config('forum.general.validation.content_min')],
-        ];
+        return PostRules::create();
     }
 
     public function fulfill()

@@ -14,7 +14,7 @@ class SyncStats extends Command
                             {--model= : The model to process (Category or Thread). Omit to process both models.}
                             {--range= : The rows to process for the given model in the format skip:take. Omit to process all rows.}';
 
-    protected $description = 'Synchronize forum category and thread statistics.';
+    protected $description = 'Synchronize forum category and thread statistics';
 
     public function handle()
     {
@@ -60,8 +60,8 @@ class SyncStats extends Command
         $bar->start();
 
         foreach ($categories as $category) {
-            $newestThreadId = $category->getNewestThreadId();
-            $latestActiveThreadId = $category->getLatestActiveThreadId();
+            $newestThreadId = $category->newestThread?->id;
+            $latestActiveThreadId = $category->latestActiveThread?->id;
 
             $postCount = Post::whereHas('thread', function (Builder $query) use ($category) {
                 $query->where('category_id', $category->id);

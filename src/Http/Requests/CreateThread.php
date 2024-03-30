@@ -3,25 +3,23 @@
 namespace TeamTeaTime\Forum\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\CreateThread as Action;
-use TeamTeaTime\Forum\Events\UserCreatedThread;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
+use TeamTeaTime\Forum\{
+    Actions\CreateThread as Action,
+    Events\UserCreatedThread,
+    Support\Authorization\CategoryAuthorization,
+    Support\Validation\ThreadRules,
+};
 
-class CreateThread extends FormRequest implements FulfillableRequest
+class CreateThread extends FormRequest implements FulfillableRequestInterface
 {
     public function authorize(): bool
     {
-        $category = $this->route('category');
-
-        return $category->accepts_threads && $this->user()->can('createThreads', $category);
+        return CategoryAuthorization::createThreads($this->user(), $this->route('category'));
     }
 
     public function rules(): array
     {
-        return [
-            'title' => ['required', 'string', 'min:'.config('forum.general.validation.title_min')],
-            'content' => ['required', 'string', 'min:'.config('forum.general.validation.content_min')],
-        ];
+        return ThreadRules::create();
     }
 
     public function fulfill()

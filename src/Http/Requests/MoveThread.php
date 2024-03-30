@@ -3,13 +3,16 @@
 namespace TeamTeaTime\Forum\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\MoveThread as Action;
-use TeamTeaTime\Forum\Events\UserMovedThread;
-use TeamTeaTime\Forum\Http\Requests\Traits\AuthorizesAfterValidation;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
-use TeamTeaTime\Forum\Models\Category;
+use TeamTeaTime\Forum\{
+    Actions\MoveThread as Action,
+    Events\UserMovedThread,
+    Http\Requests\Traits\AuthorizesAfterValidation,
+    Models\Category,
+    Support\Authorization\CategoryAuthorization,
+    Support\Validation\ThreadRules,
+};
 
-class MoveThread extends FormRequest implements FulfillableRequest
+class MoveThread extends FormRequest implements FulfillableRequestInterface
 {
     use AuthorizesAfterValidation;
 
@@ -17,17 +20,12 @@ class MoveThread extends FormRequest implements FulfillableRequest
 
     public function rules(): array
     {
-        return [
-            'category_id' => ['required', 'int', 'exists:forum_categories,id'],
-        ];
+        return ThreadRules::move();
     }
 
     public function authorizeValidated(): bool
     {
-        $thread = $this->route('thread');
-        $destinationCategory = $this->getDestinationCategory();
-
-        return $this->user()->can('moveThreadsFrom', $thread->category) && $this->user()->can('moveThreadsTo', $destinationCategory);
+        return CategoryAuthorization::moveThread($this->user(), $this->route('thread')->category, $this->getDestinationCategory());
     }
 
     public function fulfill()
@@ -39,7 +37,7 @@ class MoveThread extends FormRequest implements FulfillableRequest
         $action = new Action($thread, $destinationCategory);
         $thread = $action->execute();
 
-        if (! $thread === null) {
+        if (!$thread === null) {
             UserMovedThread::dispatch($this->user(), $thread, $sourceCategory, $destinationCategory);
         }
 
@@ -48,7 +46,7 @@ class MoveThread extends FormRequest implements FulfillableRequest
 
     private function getDestinationCategory(): Category
     {
-        if (! isset($this->destinationCategory)) {
+        if (!isset($this->destinationCategory)) {
             $this->destinationCategory = Category::find($this->input('category_id'));
         }
 

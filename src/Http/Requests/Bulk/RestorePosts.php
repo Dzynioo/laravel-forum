@@ -3,33 +3,27 @@
 namespace TeamTeaTime\Forum\Http\Requests\Bulk;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\Bulk\RestorePosts as Action;
-use TeamTeaTime\Forum\Events\UserBulkRestoredPosts;
-use TeamTeaTime\Forum\Http\Requests\Traits\AuthorizesAfterValidation;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
-use TeamTeaTime\Forum\Models\Post;
+use TeamTeaTime\Forum\{
+    Actions\Bulk\RestorePosts as Action,
+    Events\UserBulkRestoredPosts,
+    Http\Requests\Traits\AuthorizesAfterValidation,
+    Http\Requests\FulfillableRequestInterface,
+    Support\Authorization\PostAuthorization,
+    Support\Validation\PostRules,
+};
 
-class RestorePosts extends FormRequest implements FulfillableRequest
+class RestorePosts extends FormRequest implements FulfillableRequestInterface
 {
     use AuthorizesAfterValidation;
 
     public function rules(): array
     {
-        return [
-            'posts' => ['required', 'array'],
-        ];
+        return PostRules::bulk();
     }
 
     public function authorizeValidated(): bool
     {
-        $posts = Post::whereIn('id', $this->validated()['posts'])->onlyTrashed()->get();
-        foreach ($posts as $post) {
-            if (! ($this->user()->can('restorePosts', $post->thread) && $this->user()->can('restore', $post))) {
-                return false;
-            }
-        }
-
-        return true;
+        return PostAuthorization::bulkRestore($this->user(), $this->validated()['posts']);
     }
 
     public function fulfill()

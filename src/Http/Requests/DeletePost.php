@@ -3,34 +3,33 @@
 namespace TeamTeaTime\Forum\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\DeletePost as Action;
-use TeamTeaTime\Forum\Events\UserDeletedPost;
-use TeamTeaTime\Forum\Http\Requests\Traits\HandlesDeletion;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
+use TeamTeaTime\Forum\{
+    Actions\DeletePost as Action,
+    Events\UserDeletedPost,
+    Support\Authorization\PostAuthorization,
+    Support\Validation\PostRules,
+    Support\Traits\HandlesDeletion,
+};
 
-class DeletePost extends FormRequest implements FulfillableRequest
+class DeletePost extends FormRequest implements FulfillableRequestInterface
 {
     use HandlesDeletion;
 
     public function authorize(): bool
     {
-        $post = $this->route('post');
-
-        return $post->sequence != 1 && $this->user()->can('deletePosts', $post->thread) && $this->user()->can('delete', $post);
+        return PostAuthorization::delete($this->user(), $this->route('post'));
     }
 
     public function rules(): array
     {
-        return [
-            'permadelete' => ['boolean'],
-        ];
+        return PostRules::delete();
     }
 
     public function fulfill()
     {
         $post = $this->route('post');
 
-        $action = new Action($post, $this->isPermaDeleting());
+        $action = new Action($post, $this->shouldPermaDelete(isset($this->validated()['permadelete']) && $this->validated()['permadelete']));
         $post = $action->execute();
 
         if ($post !== null) {

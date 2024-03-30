@@ -2,13 +2,14 @@
 
 namespace TeamTeaTime\Forum\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User;
 use Kalnoy\Nestedset\NodeTrait;
-use TeamTeaTime\Forum\Support\CategoryPrivacy;
-use TeamTeaTime\Forum\Support\Web\Forum;
+use TeamTeaTime\Forum\Support\Access\CategoryAccess;
+use TeamTeaTime\Forum\Support\Frontend\Forum;
 
 class Category extends BaseModel
 {
@@ -24,7 +25,8 @@ class Category extends BaseModel
         'thread_count',
         'post_count',
         'is_private',
-        'color',
+        'color_light_mode',
+        'color_dark_mode',
     ];
     protected $appends = ['route'];
 
@@ -58,9 +60,22 @@ class Category extends BaseModel
         return $query->where('is_private', 1);
     }
 
-    public function getRouteAttribute(): string
+    public function scopeThreadDestinations(Builder $query): Builder
     {
-        return Forum::route('category.show', $this);
+        return $query->defaultOrder()
+            ->with('children')
+            ->where('accepts_threads', true)
+            ->withDepth();
+    }
+
+    public function isEmpty(): bool
+    {
+        return $this->descendants->count() == 0 && $this->threads()->withTrashed()->count() == 0;
+    }
+
+    public function isAccessibleTo(?User $user): bool
+    {
+        return CategoryAccess::isAccessibleTo($user, $this->id);
     }
 
     public function getNewestThreadId(): ?int
@@ -77,13 +92,17 @@ class Category extends BaseModel
         return $thread ? $thread->id : null;
     }
 
-    public function isEmpty(): bool
+    protected function route(): Attribute
     {
-        return $this->descendants->count() == 0 && $this->threads()->withTrashed()->count() == 0;
+        return new Attribute(
+            get: fn () => Forum::route('category.show', $this),
+        );
     }
 
-    public function isAccessibleTo(?User $user): bool
+    protected function styleVariables(): Attribute
     {
-        return CategoryPrivacy::isAccessibleTo($user, $this->id);
+        return new Attribute(
+            get: fn () => "--category-light: {$this->color_light_mode}; --category-dark: {$this->color_dark_mode};",
+        );
     }
 }

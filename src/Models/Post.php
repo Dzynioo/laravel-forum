@@ -2,11 +2,13 @@
 
 namespace TeamTeaTime\Forum\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use TeamTeaTime\Forum\Models\Traits\HasAuthor;
+use TeamTeaTime\Forum\Support\Frontend\Forum;
 
 class Post extends BaseModel
 {
@@ -22,6 +24,7 @@ class Post extends BaseModel
         'sequence',
         'content',
     ];
+    protected $appends = ['route'];
 
     public function __construct(array $attributes = [])
     {
@@ -52,12 +55,28 @@ class Post extends BaseModel
         return $query->where('updated_at', '>', date('Y-m-d H:i:s', $cutoff))->orderBy('updated_at', 'desc');
     }
 
-    public function getSequenceNumber(): int
+    public function getSequenceNumber(bool $withTrashed = false): int
     {
-        foreach ($this->thread->posts as $index => $post) {
+        $posts = $withTrashed
+            ? $this->thread->posts()->withTrashed()->get()
+            : $this->thread->posts;
+
+        foreach ($posts as $index => $post) {
             if ($post->id == $this->id) {
                 return $index + 1;
             }
         }
+    }
+
+    public function getPage(): int
+    {
+        return ceil($this->getSequenceNumber(true) / $this->getPerPage());
+    }
+
+    protected function route(): Attribute
+    {
+        return new Attribute(
+            get: fn () => Forum::route('thread.show', $this),
+        );
     }
 }

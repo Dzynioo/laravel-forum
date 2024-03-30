@@ -3,17 +3,17 @@
 namespace TeamTeaTime\Forum\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\RestoreThread as Action;
-use TeamTeaTime\Forum\Events\UserRestoredThread;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
+use TeamTeaTime\Forum\{
+    Actions\RestoreThread as Action,
+    Events\UserRestoredThread,
+    Support\Authorization\ThreadAuthorization,
+};
 
-class RestoreThread extends FormRequest implements FulfillableRequest
+class RestoreThread extends FormRequest implements FulfillableRequestInterface
 {
     public function authorize(): bool
     {
-        $thread = $this->route('thread');
-
-        return $this->user()->can('restoreThreads', $thread->category) && $this->user()->can('restore', $thread);
+        return ThreadAuthorization::restore($this->user(), $this->route('thread'));
     }
 
     public function rules(): array
@@ -26,7 +26,7 @@ class RestoreThread extends FormRequest implements FulfillableRequest
         $action = new Action($this->route('thread'));
         $thread = $action->execute();
 
-        if (! $thread === null) {
+        if (!$thread === null) {
             UserRestoredThread::dispatch($this->user(), $thread);
         }
 

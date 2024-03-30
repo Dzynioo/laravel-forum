@@ -3,47 +3,121 @@
 namespace TeamTeaTime\Forum;
 
 use Carbon\Carbon;
-use Illuminate\Contracts\Auth\Access\Gate as GateContract;
-use Illuminate\Foundation\AliasLoader;
-use Illuminate\Routing\Router;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\ServiceProvider;
-use TeamTeaTime\Forum\Console\Commands\InstallPreset;
-use TeamTeaTime\Forum\Console\Commands\Seed;
-use TeamTeaTime\Forum\Console\Commands\SyncStats;
-use TeamTeaTime\Forum\Http\Middleware\ResolveApiParameters;
-use TeamTeaTime\Forum\Http\Middleware\ResolveWebParameters;
+
+use Illuminate\{
+    Contracts\Auth\Access\Gate as GateContract,
+    Foundation\AliasLoader,
+    Routing\Router,
+    Support\Facades\Auth,
+    Support\Facades\Log,
+    Support\Facades\View,
+    Support\ServiceProvider,
+    View\Compilers\BladeCompiler,
+};
+
+use TeamTeaTime\Forum\{
+    Config\FrontendStack,
+    Console\Commands\PresetInstall,
+    Console\Commands\PresetList,
+    Console\Commands\Seed,
+    Console\Commands\SyncStats,
+    Frontend\Presets\AbstractPreset,
+    Frontend\Presets\BootstrapPreset,
+    Frontend\Presets\PresetRegistry,
+    Frontend\Presets\LivewirePreset,
+    Frontend\Presets\TailwindPreset,
+    Frontend\Stacks\Blade,
+    Frontend\Stacks\StackInterface,
+    Frontend\Stacks\Livewire,
+    Http\Middleware\ResolveApiParameters,
+};
 
 class ForumServiceProvider extends ServiceProvider
 {
+    private const CONFIG_FILES = [
+        'api',
+        'frontend',
+        'general',
+        'integration',
+    ];
+
+    private bool $isFrontendEnabled = false;
+    private ?StackInterface $frontendStack = null;
+    private ?AbstractPreset $frontendPreset = null;
+
+    public function __construct($app)
+    {
+        parent::__construct($app);
+
+        foreach (self::CONFIG_FILES as $key) {
+            $this->mergeConfigFrom(__DIR__."/../config/{$key}.php", "forum.{$key}");
+        }
+
+        $this->isFrontendEnabled = config('forum.frontend.enable');
+        if (!$this->isFrontendEnabled) {
+            return;
+        }
+
+        $presetRegistry = new PresetRegistry;
+        $presetRegistry->register(new LivewirePreset);
+        $presetRegistry->register(new BootstrapPreset);
+        $presetRegistry->register(new TailwindPreset);
+
+        $app->instance(PresetRegistry::class, $presetRegistry);
+
+        $this->frontendPreset = $presetRegistry->get(config('forum.frontend.preset'));
+
+        switch ($this->frontendPreset->getRequiredStack()) {
+            case FrontendStack::BLADE:
+                $this->frontendStack = new Blade;
+                break;
+            case FrontendStack::LIVEWIRE:
+                if (!class_exists(\Livewire\Livewire::class)) {
+                    Log::error('The active forum preset requires Livewire, but Livewire is not installed. Please install it: composer require livewire/livewire');
+                    break;
+                }
+
+                $this->frontendStack = new Livewire;
+                break;
+        }
+    }
+
+    public function register()
+    {
+        if ($this->isFrontendEnabled) {
+            $this->callAfterResolving(BladeCompiler::class, function () {
+                $this->frontendStack->register();
+                $this->frontendPreset->register();
+            });
+        }
+    }
+
     public function boot(Router $router, GateContract $gate)
     {
-        $this->publishes([
-            __DIR__.'/../config/api.php' => config_path('forum.api.php'),
-            __DIR__.'/../config/web.php' => config_path('forum.web.php'),
-            __DIR__.'/../config/general.php' => config_path('forum.general.php'),
-            __DIR__.'/../config/integration.php' => config_path('forum.integration.php'),
-        ], 'config');
-
-        $this->publishes([
-            __DIR__.'/../database/migrations/' => database_path('migrations'),
-        ], 'migrations');
-
-        $this->publishes([
-            __DIR__.'/../translations/' => function_exists('lang_path') ? lang_path('vendor/forum') : resource_path('lang/vendor/forum'),
-        ], 'translations');
-
-        foreach (['api', 'web', 'general', 'integration'] as $name) {
-            $this->mergeConfigFrom(__DIR__."/../config/{$name}.php", "forum.{$name}");
-        }
+        $this->publishConfig();
+        $this->publishMigrations();
+        $this->publishTranslations();
 
         if (config('forum.api.enable')) {
             $this->enableApi($router);
         }
 
-        if (config('forum.web.enable')) {
-            $this->enableWeb($router);
+        if ($this->isFrontendEnabled) {
+            $routerConfig = $this->frontendStack->getRouterConfig();
+            $router->group($routerConfig, fn () => $this->loadRoutesFrom($this->frontendStack->getRoutesPath()));
+
+            $viewsPath = $this->frontendPreset->getViewsPath();
+            $this->loadViewsFrom($viewsPath, 'forum');
+
+            View::composer('forum.master', function ($view) {
+                if (Auth::check()) {
+                    $nameAttribute = config('forum.integration.user_name');
+                    $view->username = Auth::user()->{$nameAttribute};
+                }
+            });
+
+            $loader = AliasLoader::getInstance();
+            $loader->alias('Forum', config('forum.frontend.utility_class'));
         }
 
         $this->loadTranslationsFrom(__DIR__.'/../translations', 'forum');
@@ -53,56 +127,52 @@ class ForumServiceProvider extends ServiceProvider
         // Make sure Carbon's locale is set to the application locale
         Carbon::setLocale(config('app.locale'));
 
-        $loader = AliasLoader::getInstance();
-        $loader->alias('Forum', config('forum.web.utility_class'));
-
-        View::composer('forum.master', function ($view) {
-            if (Auth::check()) {
-                $nameAttribute = config('forum.integration.user_name');
-                $view->username = Auth::user()->{$nameAttribute};
-            }
-        });
-
         if ($this->app->runningInConsole()) {
             $this->commands([
-                InstallPreset::class,
+                PresetInstall::class,
+                PresetList::class,
                 Seed::class,
                 SyncStats::class,
             ]);
         }
     }
 
-    private function enableApi(Router $router)
+    private function publishConfig(): void
+    {
+        $configPathMap = [];
+        foreach (self::CONFIG_FILES as $key) {
+            $configPathMap[__DIR__."/../config/{$key}.php"] = config_path("forum/{$key}.php");
+        }
+
+        $this->publishes($configPathMap, 'config');
+    }
+
+    private function publishMigrations(): void
+    {
+        $this->publishes([
+            __DIR__.'/../database/migrations/' => database_path('migrations'),
+        ], 'migrations');
+    }
+
+    private function publishTranslations(): void
+    {
+        $this->publishes([
+            __DIR__.'/../translations/' => function_exists('lang_path') ? lang_path('vendor/forum') : resource_path('lang/vendor/forum'),
+        ], 'translations');
+    }
+
+    private function enableApi(Router $router): void
     {
         $config = config('forum.api.router');
         $config['middleware'][] = ResolveApiParameters::class;
 
-        $router
-            ->prefix($config['prefix'])
-            ->name($config['as'])
-            ->namespace($config['namespace'])
-            ->middleware($config['middleware'])
-            ->group(function () {
-                $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
-            });
+        $router->group($config, function ($router)
+        {
+            $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        });
     }
 
-    private function enableWeb(Router $router)
-    {
-        $config = config('forum.web.router');
-        $config['middleware'][] = ResolveWebParameters::class;
-
-        $router
-            ->prefix($config['prefix'])
-            ->name($config['as'])
-            ->namespace($config['namespace'])
-            ->middleware($config['middleware'])
-            ->group(function () {
-                $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-            });
-    }
-
-    private function registerPolicies(GateContract $gate)
+    private function registerPolicies(GateContract $gate): void
     {
         $forumPolicy = config('forum.integration.policies.forum');
         foreach (get_class_methods(new $forumPolicy()) as $method) {

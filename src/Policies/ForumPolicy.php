@@ -9,18 +9,17 @@ class ForumPolicy
         return true;
     }
 
-    public function manageCategories($user): bool
-    {
-        return $this->moveCategories($user) ||
-               $this->renameCategories($user);
-    }
-
     public function moveCategories($user): bool
     {
         return true;
     }
 
-    public function renameCategories($user): bool
+    public function editCategories($user): bool
+    {
+        return true;
+    }
+
+    public function deleteCategories($user): bool
     {
         return true;
     }

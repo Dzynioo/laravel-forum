@@ -4,15 +4,19 @@ namespace TeamTeaTime\Forum\Http\Requests\Bulk;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\Bulk\MoveThreads as Action;
-use TeamTeaTime\Forum\Events\UserBulkMovedThreads;
-use TeamTeaTime\Forum\Http\Requests\Traits\AuthorizesAfterValidation;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
-use TeamTeaTime\Forum\Models\Category;
-use TeamTeaTime\Forum\Models\Thread;
-use TeamTeaTime\Forum\Support\CategoryPrivacy;
+use TeamTeaTime\Forum\{
+    Actions\Bulk\MoveThreads as Action,
+    Events\UserBulkMovedThreads,
+    Http\Requests\Traits\AuthorizesAfterValidation,
+    Http\Requests\FulfillableRequestInterface,
+    Models\BaseModel,
+    Models\Category,
+    Models\Thread,
+    Support\Authorization\ThreadAuthorization,
+    Support\Validation\ThreadRules,
+};
 
-class MoveThreads extends FormRequest implements FulfillableRequest
+class MoveThreads extends FormRequest implements FulfillableRequestInterface
 {
     use AuthorizesAfterValidation;
 
@@ -21,29 +25,12 @@ class MoveThreads extends FormRequest implements FulfillableRequest
 
     public function rules(): array
     {
-        return [
-            'threads' => ['required', 'array'],
-            'category_id' => ['required', 'int', 'exists:forum_categories,id'],
-        ];
+        return ThreadRules::bulkMove();
     }
 
     public function authorizeValidated(): bool
     {
-        $destinationCategory = $this->getDestinationCategory();
-
-        $accessibleCategoryIds = CategoryPrivacy::getFilteredFor($this->user())->keys();
-
-        if (! ($accessibleCategoryIds->contains($destinationCategory->id) || $this->user()->can('moveThreadsTo', $destinationCategory))) {
-            return false;
-        }
-
-        foreach ($this->getSourceCategories() as $category) {
-            if (! ($accessibleCategoryIds->contains($category->id) || $this->user()->can('moveThreadsFrom', $category))) {
-                return false;
-            }
-        }
-
-        return true;
+        return ThreadAuthorization::bulkMove($this->user(), $this->getSourceCategories(), $this->getDestinationCategory());
     }
 
     public function fulfill()
@@ -64,14 +51,14 @@ class MoveThreads extends FormRequest implements FulfillableRequest
 
     private function getSourceCategories()
     {
-        if (! $this->sourceCategories) {
+        if (!$this->sourceCategories) {
             $query = Thread::select('category_id')
                 ->distinct()
                 ->where('category_id', '!=', $this->validated()['category_id'])
                 ->whereIn('id', $this->validated()['threads']);
 
-            if (! $this->user()->can('viewTrashedThreads')) {
-                $query = $query->whereNull(Thread::DELETED_AT);
+            if (!$this->user()->can('viewTrashedThreads')) {
+                $query = $query->whereNull(BaseModel::DELETED_AT);
             }
 
             $this->sourceCategories = Category::whereIn('id', $query->get()->pluck('category_id'))->get();

@@ -3,45 +3,27 @@
 namespace TeamTeaTime\Forum\Http\Requests\Bulk;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\Bulk\LockThreads as Action;
-use TeamTeaTime\Forum\Events\UserBulkLockedThreads;
-use TeamTeaTime\Forum\Http\Requests\Traits\AuthorizesAfterValidation;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
-use TeamTeaTime\Forum\Models\Category;
-use TeamTeaTime\Forum\Models\Thread;
-use TeamTeaTime\Forum\Support\CategoryPrivacy;
+use TeamTeaTime\Forum\{
+    Actions\Bulk\LockThreads as Action,
+    Events\UserBulkLockedThreads,
+    Http\Requests\Traits\AuthorizesAfterValidation,
+    Http\Requests\FulfillableRequestInterface,
+    Support\Authorization\ThreadAuthorization,
+    Support\Validation\ThreadRules,
+};
 
-class LockThreads extends FormRequest implements FulfillableRequest
+class LockThreads extends FormRequest implements FulfillableRequestInterface
 {
     use AuthorizesAfterValidation;
 
     public function rules(): array
     {
-        return [
-            'threads' => ['required', 'array'],
-        ];
+        return ThreadRules::bulk();
     }
 
     public function authorizeValidated(): bool
     {
-        $query = Thread::whereIn('id', $this->validated()['threads']);
-
-        if ($this->user()->can('viewTrashedThreads')) {
-            $query = $query->withTrashed();
-        }
-
-        $categoryIds = $query->select('category_id')->distinct()->pluck('category_id');
-        $categories = Category::whereIn('id', $categoryIds)->get();
-
-        $accessibleCategoryIds = CategoryPrivacy::getFilteredFor($this->user())->keys();
-
-        foreach ($categories as $category) {
-            if (! ($accessibleCategoryIds->contains($category->id) || $this->user()->can('lockThreads', $category))) {
-                return false;
-            }
-        }
-
-        return true;
+        return ThreadAuthorization::bulkLock($this->user(), $this->validated()['threads']);
     }
 
     public function fulfill()

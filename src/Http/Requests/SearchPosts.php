@@ -3,13 +3,16 @@
 namespace TeamTeaTime\Forum\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\SearchPosts as Action;
-use TeamTeaTime\Forum\Events\UserSearchedPosts;
-use TeamTeaTime\Forum\Http\Requests\Traits\AuthorizesAfterValidation;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
-use TeamTeaTime\Forum\Models\Category;
+use TeamTeaTime\Forum\{
+    Actions\SearchPosts as Action,
+    Events\UserSearchedPosts,
+    Http\Requests\Traits\AuthorizesAfterValidation,
+    Models\Category,
+    Support\Authorization\CategoryAuthorization,
+    Support\Validation\PostRules,
+};
 
-class SearchPosts extends FormRequest implements FulfillableRequest
+class SearchPosts extends FormRequest implements FulfillableRequestInterface
 {
     use AuthorizesAfterValidation;
 
@@ -17,16 +20,12 @@ class SearchPosts extends FormRequest implements FulfillableRequest
 
     public function rules(): array
     {
-        return [
-            'term' => ['required', 'string'],
-        ];
+        return PostRules::search();
     }
 
     public function authorizeValidated(): bool
     {
-        $category = $this->getCategory();
-
-        return $category == null || ! $category->is_private || $category->isAccessibleTo($this->user());
+        return CategoryAuthorization::search($this->user(), $this->getCategory());
     }
 
     public function fulfill()
@@ -47,7 +46,7 @@ class SearchPosts extends FormRequest implements FulfillableRequest
     {
         $categoryId = $this->query('category_id');
 
-        if (! isset($this->category) && $categoryId != null && is_numeric($categoryId)) {
+        if (!isset($this->category) && $categoryId != null && is_numeric($categoryId)) {
             $this->category = Category::find($categoryId);
         }
 

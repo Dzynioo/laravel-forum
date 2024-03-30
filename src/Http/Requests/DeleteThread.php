@@ -3,35 +3,34 @@
 namespace TeamTeaTime\Forum\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\DeleteThread as Action;
-use TeamTeaTime\Forum\Events\UserDeletedThread;
-use TeamTeaTime\Forum\Http\Requests\Traits\HandlesDeletion;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
+use TeamTeaTime\Forum\{
+    Actions\DeleteThread as Action,
+    Events\UserDeletedThread,
+    Support\Authorization\ThreadAuthorization,
+    Support\Validation\ThreadRules,
+    Support\Traits\HandlesDeletion,
+};
 
-class DeleteThread extends FormRequest implements FulfillableRequest
+class DeleteThread extends FormRequest implements FulfillableRequestInterface
 {
     use HandlesDeletion;
 
     public function authorize(): bool
     {
-        $thread = $this->route('thread');
-
-        return $this->user()->can('deleteThreads', $thread->category) && $this->user()->can('delete', $thread);
+        return ThreadAuthorization::delete($this->user(), $this->route('thread'));
     }
 
     public function rules(): array
     {
-        return [
-            'permadelete' => ['boolean'],
-        ];
+        return ThreadRules::delete();
     }
 
     public function fulfill()
     {
-        $action = new Action($this->route('thread'), $this->isPermaDeleting());
+        $action = new Action($this->route('thread'), $this->shouldPermaDelete(isset($this->validated()['permadelete']) && $this->validated()['permadelete']));
         $thread = $action->execute();
 
-        if (! $thread === null) {
+        if (!$thread === null) {
             UserDeletedThread::dispatch($this->user(), $thread);
         }
 

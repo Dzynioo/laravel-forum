@@ -2,36 +2,28 @@
 
 namespace TeamTeaTime\Forum\Http\Requests\Bulk;
 
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
-use TeamTeaTime\Forum\Actions\Bulk\PinThreads as Action;
-use TeamTeaTime\Forum\Events\UserBulkPinnedThreads;
-use TeamTeaTime\Forum\Http\Requests\Traits\AuthorizesAfterValidation;
-use TeamTeaTime\Forum\Interfaces\FulfillableRequest;
-use TeamTeaTime\Forum\Models\Category;
-use TeamTeaTime\Forum\Models\Thread;
+use TeamTeaTime\Forum\{
+    Actions\Bulk\PinThreads as Action,
+    Events\UserBulkPinnedThreads,
+    Http\Requests\Traits\AuthorizesAfterValidation,
+    Http\Requests\FulfillableRequestInterface,
+    Support\Authorization\ThreadAuthorization,
+    Support\Validation\ThreadRules,
+};
 
-class PinThreads extends FormRequest implements FulfillableRequest
+class PinThreads extends FormRequest implements FulfillableRequestInterface
 {
     use AuthorizesAfterValidation;
 
     public function rules(): array
     {
-        return [
-            'threads' => ['required', 'array'],
-        ];
+        return ThreadRules::bulk();
     }
 
     public function authorizeValidated(): bool
     {
-        $categories = $this->categories();
-        foreach ($categories as $category) {
-            if (! $this->user()->can('pinThreads', $category)) {
-                return false;
-            }
-        }
-
-        return true;
+        return ThreadAuthorization::bulkPin($this->user(), $this->validated()['threads']);
     }
 
     public function fulfill()
@@ -44,18 +36,5 @@ class PinThreads extends FormRequest implements FulfillableRequest
         }
 
         return $threads;
-    }
-
-    protected function categories(): Collection
-    {
-        $query = Thread::whereIn('id', $this->validated()['threads']);
-
-        if ($this->user()->can('viewTrashedThreads')) {
-            $query = $query->withTrashed();
-        }
-
-        $categoryIds = $query->select('category_id')->distinct()->pluck('category_id');
-
-        return Category::whereIn('id', $categoryIds)->get();
     }
 }
