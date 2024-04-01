@@ -2,6 +2,8 @@
 
 namespace TeamTeaTime\Forum\Events\Types;
 
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use TeamTeaTime\Forum\Models\Post;
 
 class PostEvent extends BaseEvent
@@ -15,5 +17,11 @@ class PostEvent extends BaseEvent
     {
         $this->user = $user;
         $this->post = $post;
+    }
+
+    public function broadcastOn(): Channel
+    {
+        $channel = "Forum.Thread.{$this->post->thread_id}";
+        return new PrivateChannel($channel);
     }
 }

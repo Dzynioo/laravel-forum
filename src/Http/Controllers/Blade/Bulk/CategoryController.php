@@ -3,11 +3,11 @@
 namespace TeamTeaTime\Forum\Http\Controllers\Blade\Bulk;
 
 use Illuminate\Http\JsonResponse;
-use TeamTeaTime\Forum\Http\Requests\Bulk\ManageCategories;
+use TeamTeaTime\Forum\Http\Requests\Bulk\UpdateCategoryTree;
 
 class CategoryController
 {
-    public function manage(ManageCategories $request): JsonResponse
+    public function manage(UpdateCategoryTree $request): JsonResponse
     {
         $request->fulfill();
 

@@ -21,4 +21,9 @@ class UserSearchedPosts extends BaseEvent
         $this->term = $term;
         $this->results = $results;
     }
+
+    public function broadcastAs(): string
+    {
+        return 'user-searched-posts';
+    }
 }

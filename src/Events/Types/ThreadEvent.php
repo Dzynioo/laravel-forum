@@ -2,6 +2,8 @@
 
 namespace TeamTeaTime\Forum\Events\Types;
 
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use TeamTeaTime\Forum\Models\Thread;
 
 class ThreadEvent extends BaseEvent
@@ -15,5 +17,11 @@ class ThreadEvent extends BaseEvent
     {
         $this->user = $user;
         $this->thread = $thread;
+    }
+
+    public function broadcastOn(): Channel
+    {
+        $channel = "Forum.Category.{$this->thread->category_id}";
+        return new PrivateChannel($channel);
     }
 }

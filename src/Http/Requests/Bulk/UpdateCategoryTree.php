@@ -5,13 +5,13 @@ namespace TeamTeaTime\Forum\Http\Requests\Bulk;
 use Illuminate\Foundation\Http\FormRequest;
 use TeamTeaTime\Forum\{
     Actions\Bulk\UpdateCategoryTree as Action,
-    Events\UserBulkManagedCategories,
+    Events\UserUpdatedCategoryTree,
     Http\Requests\FulfillableRequestInterface,
     Support\Authorization\CategoryAuthorization,
     Support\Validation\CategoryRules,
 };
 
-class ManageCategories extends FormRequest implements FulfillableRequestInterface
+class UpdateCategoryTree extends FormRequest implements FulfillableRequestInterface
 {
     public function rules(): array
     {
@@ -29,7 +29,7 @@ class ManageCategories extends FormRequest implements FulfillableRequestInterfac
         $action = new Action($categoryData);
         $categoriesAffected = $action->execute();
 
-        UserBulkManagedCategories::dispatch($this->user(), $categoriesAffected, $categoryData);
+        UserUpdatedCategoryTree::dispatch($this->user(), $categoriesAffected, $categoryData);
 
         return $categoriesAffected;
     }

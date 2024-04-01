@@ -6,4 +6,8 @@ use TeamTeaTime\Forum\Events\Types\ThreadEvent;
 
 class UserRestoredThread extends ThreadEvent
 {
+    public function broadcastAs(): string
+    {
+        return 'user-restored-thread';
+    }
 }

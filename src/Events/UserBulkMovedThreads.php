@@ -19,4 +19,9 @@ class UserBulkMovedThreads extends CollectionEvent
         $this->sourceCategories = $sourceCategories;
         $this->destinationCategory = $destinationCategory;
     }
+
+    public function broadcastAs(): string
+    {
+        return 'user-bulk-moved-threads';
+    }
 }

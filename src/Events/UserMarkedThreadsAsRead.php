@@ -16,4 +16,9 @@ class UserMarkedThreadsAsRead extends CollectionEvent
 
         $this->category = $category;
     }
+
+    public function broadcastAs(): string
+    {
+        return 'user-marked-threads-read';
+    }
 }

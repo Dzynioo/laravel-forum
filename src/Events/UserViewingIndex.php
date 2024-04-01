@@ -13,4 +13,9 @@ class UserViewingIndex extends BaseEvent
     {
         $this->user = $user;
     }
+
+    public function broadcastAs(): string
+    {
+        return 'user-viewing-index';
+    }
 }

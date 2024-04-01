@@ -4,7 +4,7 @@ namespace TeamTeaTime\Forum\Events;
 
 use TeamTeaTime\Forum\Events\Types\BaseEvent;
 
-class UserBulkManagedCategories extends BaseEvent
+class UserUpdatedCategoryTree extends BaseEvent
 {
     /** @var mixed */
     public $user;
@@ -17,5 +17,10 @@ class UserBulkManagedCategories extends BaseEvent
         $this->user = $user;
         $this->categoriesAffected = $categoriesAffected;
         $this->categoryData = $categoryData;
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'user-updated-category-tree';
     }
 }

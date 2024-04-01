@@ -16,4 +16,9 @@ class UserMovedThread extends ThreadEvent
 
         $this->destinationCategory = $destinationCategory;
     }
+
+    public function broadcastAs(): string
+    {
+        return 'user-moved-thread';
+    }
 }

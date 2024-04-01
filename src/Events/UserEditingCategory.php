@@ -6,4 +6,8 @@ use TeamTeaTime\Forum\Events\Types\CategoryEvent;
 
 class UserEditingCategory extends CategoryEvent
 {
+    public function broadcastAs(): string
+    {
+        return 'user-editing-category';
+    }
 }
