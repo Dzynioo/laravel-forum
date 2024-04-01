@@ -19,7 +19,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | The frontend preset to use. Must be installed with the
-    | forum:install-preset command.
+    | forum:preset-install command.
     |
     */
 
