@@ -47,7 +47,7 @@ class CategoryEdit extends Component
         $category = $request->route('category');
         $this->category = $category;
         $this->title = $category->title;
-        $this->description = $category->description;
+        $this->description = $category->description ?? "";
         $this->color_light_mode = $category->color_light_mode;
         $this->color_dark_mode = $category->color_dark_mode;
         $this->parent_category = $category->parent_id;
