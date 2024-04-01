@@ -45,7 +45,7 @@ class ThreadController extends BaseController
             UserViewingRecent::dispatch($request->user(), $threads);
         }
 
-        return ViewFactory::make('forum.thread.recent', compact('threads'));
+        return ViewFactory::make('forum::thread.recent', compact('threads'));
     }
 
     public function unread(Request $request): View
@@ -63,7 +63,7 @@ class ThreadController extends BaseController
             UserViewingUnread::dispatch($request->user(), $threads);
         }
 
-        return ViewFactory::make('forum.thread.unread', compact('threads'));
+        return ViewFactory::make('forum::thread.unread', compact('threads'));
     }
 
     public function markAsRead(MarkThreadsAsRead $request): RedirectResponse
@@ -112,13 +112,13 @@ class ThreadController extends BaseController
 
         if ($request->user()) {
             foreach ($posts as $post) {
-                if ($request->user()->can('delete', $post) || $request->user()->can('restore', $post)) {
+                if ($post->sequence > 1 && ($request->user()->can('delete', $post) || $request->user()->can('restore', $post))) {
                     $selectablePosts[] = $post->id;
                 }
             }
         }
 
-        return ViewFactory::make('forum.thread.show', compact('categories', 'category', 'thread', 'posts', 'selectablePosts'));
+        return ViewFactory::make('forum::thread.show', compact('categories', 'category', 'thread', 'posts', 'selectablePosts'));
     }
 
     public function create(Request $request): View|RedirectResponse
@@ -135,7 +135,7 @@ class ThreadController extends BaseController
             UserCreatingThread::dispatch($request->user(), $category);
         }
 
-        return ViewFactory::make('forum.thread.create', compact('category'));
+        return ViewFactory::make('forum::thread.create', compact('category'));
     }
 
     public function store(CreateThread $request): RedirectResponse
