@@ -49,10 +49,6 @@ class CategoryCreate extends Component
         if (isset($this->parent_id)) {
             $this->parent_category = $this->parent_id;
         }
-
-        if ($request->user() !== null) {
-            UserCreatingCategory::dispatch($request->user());
-        }
     }
 
     public function create(Request $request)
@@ -71,13 +67,15 @@ class CategoryCreate extends Component
             $parent->appendNode($category);
         }
 
-        UserCreatedCategory::dispatch($request->user(), $category);
+        broadcast(new UserCreatedCategory($request->user(), $category))->toOthers();
 
         return $this->redirect($category->route);
     }
 
-    public function render(): View
+    public function render(Request $request): View
     {
+        broadcast(new UserCreatingCategory($request->user()))->toOthers();
+
         return ViewFactory::make('forum::pages.category.create')
             ->layout('forum::layouts.main');
     }

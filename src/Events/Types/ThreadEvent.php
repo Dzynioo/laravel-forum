@@ -24,4 +24,12 @@ class ThreadEvent extends BaseEvent
         $channel = "Forum.Category.{$this->thread->category_id}";
         return new PrivateChannel($channel);
     }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'user_id' => $this->user->id,
+            'thread' => $this->thread
+        ];
+    }
 }

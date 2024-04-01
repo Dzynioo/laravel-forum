@@ -16,4 +16,12 @@ class CategoryEvent extends BaseEvent
         $this->user = $user;
         $this->category = $category;
     }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'user_id' => $this->user->id,
+            'category' => $this->category
+        ];
+    }
 }

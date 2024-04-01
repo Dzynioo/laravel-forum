@@ -24,4 +24,12 @@ class PostEvent extends BaseEvent
         $channel = "Forum.Thread.{$this->post->thread_id}";
         return new PrivateChannel($channel);
     }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'user_id' => $this->user->id,
+            'post' => $this->post
+        ];
+    }
 }

@@ -53,10 +53,6 @@ class CategoryEdit extends Component
         $this->parent_category = $category->parent_id;
         $this->accepts_threads = $category->accepts_threads;
         $this->is_private = $category->is_private;
-
-        if ($request->user() !== null) {
-            UserEditingCategory::dispatch($request->user(), $category);
-        }
     }
 
     public function save(Request $request)
@@ -75,7 +71,7 @@ class CategoryEdit extends Component
             $parent->appendNode($this->category);
         }
 
-        UserEditedCategory::dispatch($request->user(), $this->category);
+        broadcast(new UserEditedCategory($request->user(), $this->category))->toOthers();
 
         return $this->redirect($this->category->route);
     }
@@ -91,8 +87,10 @@ class CategoryEdit extends Component
         return $this->redirect(Forum::route('category.index'));
     }
 
-    public function render(): View
+    public function render(Request $request): View
     {
+        broadcast(new UserEditingCategory($request->user(), $this->category))->toOthers();
+
         return ViewFactory::make('forum::pages.category.edit')
             ->layout('forum::layouts.main');
     }

@@ -18,4 +18,11 @@ class UserViewingIndex extends BaseEvent
     {
         return 'user-viewing-index';
     }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'user_id' => $this->user->id,
+        ];
+    }
 }

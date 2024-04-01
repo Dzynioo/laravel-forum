@@ -2,12 +2,9 @@
 
 namespace TeamTeaTime\Forum\Events;
 
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use TeamTeaTime\Forum\Events\Types\CollectionEvent;
 
-class UserBulkDeletedPosts extends CollectionEvent
+class UserBulkDeletedPosts extends CollectionEvent implements ShouldDispatchAfterCommit
 {
-    public function broadcastAs(): string
-    {
-        return 'user-bulk-deleted-posts';
-    }
 }

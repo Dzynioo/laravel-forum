@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\View\View;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use TeamTeaTime\Forum\{
     Actions\Bulk\DeleteThreads,
@@ -17,6 +18,7 @@ use TeamTeaTime\Forum\{
     Actions\Bulk\UnpinThreads,
     Events\UserBulkDeletedThreads,
     Events\UserBulkLockedThreads,
+    Events\UserBulkMovedThreads,
     Events\UserBulkPinnedThreads,
     Events\UserBulkRestoredThreads,
     Events\UserBulkUnlockedThreads,
@@ -47,10 +49,11 @@ class CategoryShow extends Component
         if (!$request->route('category')->isAccessibleTo($request->user())) {
             abort(404);
         }
+    }
 
-        if ($request->user() !== null) {
-            UserViewingCategory::dispatch($request->user(), $this->category);
-        }
+    #[On('echo:Forum,.user-edited-category')]
+    public function onUserEditedCategory($event)
+    {
     }
 
     private function handleActionResult($result, string $key = 'threads.updated'): array
@@ -77,7 +80,7 @@ class CategoryShow extends Component
         $result = $action->execute();
 
         if ($result !== null) {
-            UserBulkDeletedThreads::dispatch($request->user(), $result);
+            broadcast(new UserBulkDeletedThreads($request->user(), $result))->toOthers();
         }
 
         return $this->handleActionResult($result, 'threads.deleted');
@@ -93,7 +96,7 @@ class CategoryShow extends Component
         $result = $action->execute();
 
         if ($result !== null) {
-            UserBulkRestoredThreads::dispatch($request->user(), $result);
+            broadcast(new UserBulkRestoredThreads($request->user(), $result))->toOthers();
         }
 
         return $this->handleActionResult($result, 'threads.restored');
@@ -121,6 +124,10 @@ class CategoryShow extends Component
         $action = new MoveThreads($threadIds, $destination, $request->user()->can('viewTrashedThreads'));
         $result = $action->execute();
 
+        if ($result !== null) {
+            broadcast(new UserBulkMovedThreads($request->user(), $sourceCategories, $destination, $result))->toOthers();
+        }
+
         return $this->handleActionResult($result);
     }
 
@@ -134,7 +141,7 @@ class CategoryShow extends Component
         $result = $action->execute();
 
         if ($result !== null) {
-            UserBulkLockedThreads::dispatch($request->user(), $result);
+            broadcast(new UserBulkLockedThreads($request->user(), $result))->toOthers();
         }
 
         return $this->handleActionResult($result);
@@ -150,7 +157,7 @@ class CategoryShow extends Component
         $result = $action->execute();
 
         if ($result !== null) {
-            UserBulkUnlockedThreads::dispatch($request->user(), $result);
+            broadcast(new UserBulkUnlockedThreads($request->user(), $result))->toOthers();
         }
 
         return $this->handleActionResult($result);
@@ -166,7 +173,7 @@ class CategoryShow extends Component
         $result = $action->execute();
 
         if ($result !== null) {
-            UserBulkPinnedThreads::dispatch($request->user(), $result);
+            broadcast(new UserBulkPinnedThreads($request->user(), $result))->toOthers();
         }
 
         return $this->handleActionResult($result);
@@ -182,7 +189,7 @@ class CategoryShow extends Component
         $result = $action->execute();
 
         if ($result !== null) {
-            UserBulkUnpinnedThreads::dispatch($request->user(), $result);
+            broadcast(new UserBulkUnpinnedThreads($request->user(), $result))->toOthers();
         }
 
         return $this->handleActionResult($result);
@@ -209,6 +216,10 @@ class CategoryShow extends Component
         $threadDestinationCategories = $request->user() && $request->user()->can('moveCategories')
             ? Category::query()->threadDestinations()->get()
             : [];
+
+        if ($request->user() !== null) {
+            broadcast(new UserViewingCategory($request->user(), $this->category))->toOthers();
+        }
 
         return ViewFactory::make('forum::pages.category.show', [
             'category' => $this->category,

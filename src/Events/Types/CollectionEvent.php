@@ -16,4 +16,12 @@ class CollectionEvent extends BaseEvent
         $this->user = $user;
         $this->collection = $collection;
     }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'user_id' => $this->user->id,
+            'collection' => $this->collection
+        ];
+    }
 }
