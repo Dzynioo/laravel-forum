@@ -8,6 +8,10 @@ class PresetRegistry
 
     public function register(AbstractPreset $preset)
     {
+        if (isset($this->presets[$preset->getName()])) {
+            throw new \Exception("Preset '{$preset->getName()}' is already registered.");
+        }
+
         $this->presets[$preset->getName()] = $preset;
     }
 
