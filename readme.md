@@ -45,9 +45,9 @@ Run your migrations:
 
 ### Step 4: Install a UI preset
 
-As of 5.6.0, a `forum:install` command is available for installing UI presets. The available preset options are `bootstrap` (for a Bootstrap 5 UI) and `tailwind` (for a Tailwind CSS UI). You must install one of these to publish the corresponding views to your application. For example:
+A `forum:preset-install {name}` command is available for installing UI presets. Run `forum:preset-list` to see a list of available presets. You must install one of these to publish the corresponding views to your application. For example:
 
-`php artisan forum:install tailwind`
+`php artisan forum:preset-install livewire-tailwind`
 
 ### Additional steps
 
@@ -55,11 +55,15 @@ As of 5.6.0, a `forum:install` command is available for installing UI presets. T
 
 Several configuration files are published to your application's config directory, each prefixed with `forum.`. Refer to these for a variety of options for changing the behaviour of the forum and how it integrates with key parts of your application code.
 
+> [!NOTE]  
 > You may need to modify the `forum.integration.user_name` config option according to your user model. This specifies which attribute on the user model should be used as a display name in the forum views.
 
 #### Translations
 
-Laravel Forum currently supports 15 languages: German, English, Spanish, French, Italian, Dutch, Romanian, Russian, Thai, Turkish, Serbian, Portuguese (Brazil), Swedish, Chinese, and Indonesian. The translation files are published to `resources/lang/vendor/forum/{locale}`. **Some new language strings have been introduced in 5.0 but not yet translated; PRs to translate these would be greatly appreciated.**
+Laravel Forum currently supports 15 languages: German, English, Spanish, French, Italian, Dutch, Romanian, Russian, Thai, Turkish, Serbian, Portuguese (Brazil), Swedish, Chinese, and Indonesian. The translation files are published to `resources/lang/vendor/forum/{locale}`.
+
+> [!NOTE]  
+> Some new language strings have been introduced in version 6 but not yet translated; PRs to translate these would be greatly appreciated.
 
 ## Development
 
