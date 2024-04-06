@@ -20,16 +20,10 @@
             "email": "neehi@teamteatime.net"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/laravel-shift/laravel-nestedset.git"
-        }
-    ],
     "require": {
         "php": "^8.2",
         "laravel/framework": "^11.0",
-        "kalnoy/nestedset": "dev-l11-compatibility",
+        "kalnoy/nestedset": "v6.x-dev",
         "doctrine/dbal": "^4.0"
     },
     "require-dev": {
