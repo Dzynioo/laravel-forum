@@ -48,7 +48,7 @@ class UnreadThreads extends Component
 
         $this->touchUpdateKey();
 
-        UserMarkedThreadsAsRead::dispatch($request->user(), $threads);
+        UserMarkedThreadsAsRead::dispatch($request->user(), null, $threads);
 
         return $this->alert('threads.marked_read')->toLivewire();
     }
