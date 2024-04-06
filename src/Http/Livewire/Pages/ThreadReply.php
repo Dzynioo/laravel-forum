@@ -45,7 +45,7 @@ class ThreadReply extends Component
 
     public function reply(Request $request)
     {
-        $post = $this->form->reply($request, $this->thread);
+        $post = $this->form->reply($request, $this->thread, $this->parent);
 
         return redirect($post->route);
     }
