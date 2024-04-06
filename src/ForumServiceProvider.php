@@ -41,7 +41,6 @@ class ForumServiceProvider extends ServiceProvider
         'integration',
     ];
 
-    private bool $isFrontendEnabled = false;
     private ?StackInterface $frontendStack = null;
     private ?AbstractPreset $frontendPreset = null;
 
@@ -53,8 +52,7 @@ class ForumServiceProvider extends ServiceProvider
             $this->mergeConfigFrom(__DIR__ . "/../config/{$key}.php", "forum.{$key}");
         }
 
-        $this->isFrontendEnabled = config('forum.frontend.enable');
-        if (!$this->isFrontendEnabled) {
+        if (!config('forum.frontend.enable')) {
             return;
         }
 
@@ -84,7 +82,7 @@ class ForumServiceProvider extends ServiceProvider
 
     public function register()
     {
-        if ($this->isFrontendEnabled) {
+        if ($this->frontendStack != null && $this->frontendStack != null) {
             $this->callAfterResolving(BladeCompiler::class, function () {
                 $this->frontendStack->register();
                 $this->frontendPreset->register();
@@ -102,7 +100,7 @@ class ForumServiceProvider extends ServiceProvider
             $this->enableApi($router);
         }
 
-        if ($this->isFrontendEnabled) {
+        if ($this->frontendStack != null && $this->frontendStack != null) {
             $routerConfig = $this->frontendStack->getRouterConfig();
             $router->group($routerConfig, fn() => $this->loadRoutesFrom($this->frontendStack->getRoutesPath()));
 
