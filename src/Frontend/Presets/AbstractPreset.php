@@ -63,7 +63,7 @@ abstract class AbstractPreset
     {
         return [
             'name' => $this->getName(),
-            'description' => $this->getSummary(),
+            'summary' => $this->getSummary(),
             'required_stack' => $this->getRequiredStack()->value,
         ];
     }
