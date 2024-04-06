@@ -35,9 +35,7 @@ class PostEdit extends Component
             abort(404);
         }
 
-        if ($request->user() !== null) {
-            UserEditingPost::dispatch($request->user(), $request->route('post'));
-        }
+        UserEditingPost::dispatch($request->user(), $request->route('post'));
     }
 
     public function save(Request $request)
@@ -52,8 +50,6 @@ class PostEdit extends Component
         $post = $action->execute();
 
         UserEditedPost::dispatch($request->user(), $post);
-
-        $route = $post->route;
 
         return $this->redirect($post->route);
     }

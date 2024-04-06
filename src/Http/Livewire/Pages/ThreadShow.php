@@ -8,6 +8,8 @@ use Illuminate\View\View;
 use TeamTeaTime\Forum\{
     Actions\Bulk\DeletePosts,
     Actions\Bulk\RestorePosts,
+    Events\UserBulkDeletedPosts,
+    Events\UserBulkRestoredPosts,
     Events\UserViewingThread,
     Http\Livewire\Forms\ThreadEditForm,
     Http\Livewire\Forms\ThreadReplyForm,
@@ -18,7 +20,6 @@ use TeamTeaTime\Forum\{
     Models\Thread,
     Support\Access\CategoryAccess,
     Support\Authorization\PostAuthorization,
-    Support\Validation\PostRules,
     Support\Traits\HandlesDeletion,
 };
 
@@ -130,11 +131,15 @@ class ThreadShow extends EventfulPaginatedComponent
         }
 
         $action = new DeletePosts($postIds, $this->shouldPermaDelete($permadelete));
-        $action->execute();
+        $result = $action->execute();
 
         $this->touchUpdateKey();
 
-        return $this->pluralAlert('threads.deleted')->toLivewire();
+        if ($result !== null) {
+            UserBulkDeletedPosts::dispatch($request->user(), $result);
+        }
+
+        return $this->pluralAlert('posts.deleted', $result->count())->toLivewire();
     }
 
     public function restorePosts(Request $request, array $postIds): array
@@ -144,11 +149,15 @@ class ThreadShow extends EventfulPaginatedComponent
         }
 
         $action = new RestorePosts($postIds);
-        $action->execute();
+        $result = $action->execute();
 
         $this->touchUpdateKey();
 
-        return $this->pluralAlert('threads.restored')->toLivewire();
+        if ($result !== null) {
+            UserBulkRestoredPosts::dispatch($request->user(), $result);
+        }
+
+        return $this->pluralAlert('posts.restored', $result->count())->toLivewire();
     }
 
     public function render(Request $request): View

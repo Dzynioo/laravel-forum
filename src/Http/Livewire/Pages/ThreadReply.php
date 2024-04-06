@@ -8,14 +8,12 @@ use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use TeamTeaTime\Forum\{
-    Actions\CreatePost as Action,
-    Events\UserCreatedPost,
     Events\UserCreatingPost,
+    Http\Livewire\Forms\ThreadReplyForm,
     Http\Livewire\Traits\CreatesAlerts,
     Http\Livewire\Traits\UpdatesContent,
     Models\Post,
     Models\Thread,
-    Support\Validation\PostRules,
 };
 
 class ThreadReply extends Component
@@ -28,8 +26,7 @@ class ThreadReply extends Component
     #[Locked]
     public ?Post $parent = null;
 
-    // Form fields
-    public string $content = '';
+    public ThreadReplyForm $form;
 
     public function mount(Request $request)
     {
@@ -43,26 +40,12 @@ class ThreadReply extends Component
             $this->parent = $this->thread->posts->find($request->input('parent_id'));
         }
 
-        if ($request->user() !== null) {
-            UserCreatingPost::dispatch($request->user(), $this->thread);
-        }
+        UserCreatingPost::dispatch($request->user(), $this->thread);
     }
 
     public function reply(Request $request)
     {
-        if (!$request->user()->can('reply', $this->thread)) {
-            abort(403);
-        }
-
-        $validated = $this->validate(PostRules::create());
-        $action = new Action($this->thread, $this->parent, $request->user(), $validated['content']);
-        $post = $action->execute();
-
-        $post->thread->markAsRead($request->user());
-
-        UserCreatedPost::dispatch($request->user(), $post);
-
-        $this->content = "";
+        $post = $this->threadReplyForm->reply($request, $this->thread);
 
         return redirect($post->route);
     }

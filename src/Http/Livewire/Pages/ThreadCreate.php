@@ -9,6 +9,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 use TeamTeaTime\Forum\{
     Actions\CreateThread as Action,
+    Events\UserCreatingThread,
     Events\UserCreatedThread,
     Support\Authorization\CategoryAuthorization,
     Support\Validation\ThreadRules,
@@ -30,6 +31,8 @@ class ThreadCreate extends Component
     {
         $this->category = $request->route('category');
         $this->breadcrumbs_append = [trans('forum::threads.new_thread')];
+
+        UserCreatingThread::dispatch($request->user(), $this->category);
     }
 
     public function create(Request $request)

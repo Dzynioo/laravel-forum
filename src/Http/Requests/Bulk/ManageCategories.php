@@ -5,7 +5,7 @@ namespace TeamTeaTime\Forum\Http\Requests\Bulk;
 use Illuminate\Foundation\Http\FormRequest;
 use TeamTeaTime\Forum\{
     Actions\Bulk\UpdateCategoryTree as Action,
-    Events\UserBulkManagedCategories,
+    Events\UserBulkReorderedCategories,
     Http\Requests\FulfillableRequestInterface,
     Support\Authorization\CategoryAuthorization,
     Support\Validation\CategoryRules,
@@ -29,7 +29,7 @@ class ManageCategories extends FormRequest implements FulfillableRequestInterfac
         $action = new Action($categoryData);
         $categoriesAffected = $action->execute();
 
-        UserBulkManagedCategories::dispatch($this->user(), $categoriesAffected, $categoryData);
+        UserBulkReorderedCategories::dispatch($this->user(), $categoriesAffected, $categoryData);
 
         return $categoriesAffected;
     }

@@ -4,7 +4,7 @@ namespace TeamTeaTime\Forum\Events;
 
 use TeamTeaTime\Forum\Events\Types\BaseEvent;
 
-class UserManagingCategories extends BaseEvent
+class UserReorderingCategories extends BaseEvent
 {
     /** @var mixed */
     public $user;

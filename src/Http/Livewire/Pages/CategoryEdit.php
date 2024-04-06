@@ -10,6 +10,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 use TeamTeaTime\Forum\{
     Actions\EditCategory,
+    Events\UserDeletedCategory,
     Events\UserEditingCategory,
     Events\UserEditedCategory,
     Models\Category,
@@ -54,9 +55,7 @@ class CategoryEdit extends Component
         $this->accepts_threads = $category->accepts_threads;
         $this->is_private = $category->is_private;
 
-        if ($request->user() !== null) {
-            UserEditingCategory::dispatch($request->user(), $category);
-        }
+        UserEditingCategory::dispatch($request->user(), $category);
     }
 
     public function save(Request $request)
@@ -87,6 +86,8 @@ class CategoryEdit extends Component
         }
 
         $this->category->delete();
+
+        UserDeletedCategory::dispatch($request->user(), $this->category);
 
         return $this->redirect(Forum::route('category.index'));
     }

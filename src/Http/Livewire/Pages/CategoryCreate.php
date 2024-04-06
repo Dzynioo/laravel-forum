@@ -50,9 +50,7 @@ class CategoryCreate extends Component
             $this->parent_category = $this->parent_id;
         }
 
-        if ($request->user() !== null) {
-            UserCreatingCategory::dispatch($request->user());
-        }
+        UserCreatingCategory::dispatch($request->user());
     }
 
     public function create(Request $request)

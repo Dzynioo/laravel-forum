@@ -8,8 +8,8 @@ use Illuminate\View\View;
 use Livewire\Component;
 use TeamTeaTime\Forum\{
     Actions\Bulk\UpdateCategoryTree as Action,
-    Events\UserBulkManagedCategories,
-    Events\UserManagingCategories,
+    Events\UserBulkReorderedCategories,
+    Events\UserReorderingCategories,
     Http\Livewire\Traits\CreatesAlerts,
     Models\Category,
     Support\Authorization\CategoryAuthorization,
@@ -27,9 +27,7 @@ class UpdateCategoryTree extends Component
             abort(404);
         }
 
-        if ($request->user() !== null) {
-            UserManagingCategories::dispatch($request->user());
-        }
+        UserReorderingCategories::dispatch($request->user());
     }
 
     public function save(Request $request): array
@@ -41,7 +39,7 @@ class UpdateCategoryTree extends Component
         $action = new Action($this->tree);
         $result = $action->execute();
 
-        UserBulkManagedCategories::dispatch($request->user(), $result, $this->tree);
+        UserBulkReorderedCategories::dispatch($request->user(), $result, $this->tree);
 
         return $this->alert('general.changes_applied')->toLivewire();
     }

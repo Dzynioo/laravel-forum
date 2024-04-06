@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\View\View;
 use Livewire\Component;
 use TeamTeaTime\Forum\{
+    Events\UserMarkedThreadsAsRead,
     Events\UserViewingUnread,
     Http\Livewire\Traits\CreatesAlerts,
     Http\Livewire\Traits\UpdatesContent,
@@ -47,6 +48,8 @@ class UnreadThreads extends Component
 
         $this->touchUpdateKey();
 
+        UserMarkedThreadsAsRead::dispatch($request->user(), $threads);
+
         return $this->alert('threads.marked_read')->toLivewire();
     }
 
@@ -54,9 +57,7 @@ class UnreadThreads extends Component
     {
         $threads = $this->getThreads($request);
 
-        if ($request->user() !== null) {
-            UserViewingUnread::dispatch($request->user(), $threads);
-        }
+        UserViewingUnread::dispatch($request->user(), $threads);
 
         return ViewFactory::make('forum::pages.thread.unread', [
             'threads' => $threads,

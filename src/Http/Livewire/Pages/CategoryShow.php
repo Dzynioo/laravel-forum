@@ -17,6 +17,7 @@ use TeamTeaTime\Forum\{
     Actions\Bulk\UnpinThreads,
     Events\UserBulkDeletedThreads,
     Events\UserBulkLockedThreads,
+    Events\UserBulkMovedThreads,
     Events\UserBulkPinnedThreads,
     Events\UserBulkRestoredThreads,
     Events\UserBulkUnlockedThreads,
@@ -120,6 +121,10 @@ class CategoryShow extends Component
 
         $action = new MoveThreads($threadIds, $destination, $request->user()->can('viewTrashedThreads'));
         $result = $action->execute();
+
+        if ($result !== null) {
+            UserBulkMovedThreads::dispatch($request->user(), $result);
+        }
 
         return $this->handleActionResult($result);
     }
