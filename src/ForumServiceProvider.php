@@ -41,9 +41,6 @@ class ForumServiceProvider extends ServiceProvider
         'integration',
     ];
 
-    private ?StackInterface $frontendStack = null;
-    private ?AbstractPreset $frontendPreset = null;
-
     public function __construct($app)
     {
         parent::__construct($app);
@@ -60,34 +57,7 @@ class ForumServiceProvider extends ServiceProvider
         $presetRegistry->register(new LivewireTailwindPreset);
         $presetRegistry->register(new BladeBootstrapPreset);
         $presetRegistry->register(new BladeTailwindPreset);
-
         $app->instance(PresetRegistry::class, $presetRegistry);
-
-        $this->frontendPreset = $presetRegistry->get(config('forum.frontend.preset'));
-
-        switch ($this->frontendPreset->getRequiredStack()) {
-            case FrontendStack::BLADE:
-                $this->frontendStack = new Blade;
-                break;
-            case FrontendStack::LIVEWIRE:
-                if (!class_exists(\Livewire\Livewire::class)) {
-                    Log::error('The active forum preset requires Livewire, but Livewire is not installed. Please install it: composer require livewire/livewire');
-                    break;
-                }
-
-                $this->frontendStack = new Livewire;
-                break;
-        }
-    }
-
-    public function register()
-    {
-        if ($this->frontendStack != null && $this->frontendStack != null) {
-            $this->callAfterResolving(BladeCompiler::class, function () {
-                $this->frontendStack->register();
-                $this->frontendPreset->register();
-            });
-        }
     }
 
     public function boot(Router $router, GateContract $gate)
@@ -100,11 +70,35 @@ class ForumServiceProvider extends ServiceProvider
             $this->enableApi($router);
         }
 
-        if ($this->frontendStack != null && $this->frontendStack != null) {
-            $routerConfig = $this->frontendStack->getRouterConfig();
-            $router->group($routerConfig, fn() => $this->loadRoutesFrom($this->frontendStack->getRoutesPath()));
+        if (config('forum.frontend.enable')) {
+            $presets = $this->app->make(PresetRegistry::class);
 
-            $viewsPath = $this->frontendPreset->getViewsPath();
+            $preset = $presets->get(config('forum.frontend.preset'));
+            $stack = null;
+
+            switch ($preset->getRequiredStack()) {
+                case FrontendStack::BLADE:
+                    $stack = new Blade;
+                    break;
+                case FrontendStack::LIVEWIRE:
+                    if (!class_exists(\Livewire\Livewire::class)) {
+                        Log::error('The active forum preset requires Livewire, but Livewire is not installed. Please install it: composer require livewire/livewire');
+                        break;
+                    }
+
+                    $stack = new Livewire;
+                    break;
+            }
+
+            $this->callAfterResolving(BladeCompiler::class, function () use ($stack, $preset) {
+                $stack->register();
+                $preset->register();
+            });
+
+            $routerConfig = $stack->getRouterConfig();
+            $router->group($routerConfig, fn() => $this->loadRoutesFrom($stack->getRoutesPath()));
+
+            $viewsPath = $preset->getViewsPath();
             $this->loadViewsFrom($viewsPath, 'forum');
 
             View::composer('forum::layouts.main', function ($view) {
