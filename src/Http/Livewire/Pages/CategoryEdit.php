@@ -39,13 +39,18 @@ class CategoryEdit extends Component
 
     public function mount(Request $request)
     {
+        $category = $request->route('category');
+
+        if (!CategoryAuthorization::edit($request->user(), $category)) {
+            abort(404);
+        }
+
         $categories = CategoryAccess::getFilteredTreeFor($request->user())->toTree();
 
         // TODO: This is a workaround for a serialisation issue. See: https://github.com/lazychaser/laravel-nestedset/issues/487
         //       Once the issue is fixed, this can be removed.
         $this->categories = CategoryAccess::removeParentRelationships($categories);
 
-        $category = $request->route('category');
         $this->category = $category;
         $this->title = $category->title;
         $this->description = $category->description ?? "";

@@ -32,6 +32,10 @@ class ThreadCreate extends Component
         $this->category = $request->route('category');
         $this->breadcrumbs_append = [trans('forum::threads.new_thread')];
 
+        if (!CategoryAuthorization::createThreads($request->user(), $this->category)) {
+            abort(403);
+        }
+
         UserCreatingThread::dispatch($request->user(), $this->category);
     }
 

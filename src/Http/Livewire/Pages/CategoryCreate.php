@@ -38,6 +38,10 @@ class CategoryCreate extends Component
 
     public function mount(Request $request)
     {
+        if (!CategoryAuthorization::create($request->user())) {
+            abort(404);
+        }
+
         $categories = CategoryAccess::getFilteredTreeFor($request->user())->toTree();
 
         // TODO: This is a workaround for a serialisation issue. See: https://github.com/lazychaser/laravel-nestedset/issues/487
