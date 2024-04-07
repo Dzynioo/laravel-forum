@@ -21,9 +21,11 @@
 
             <x-forum::button-group>
                 @can ('editCategories')
-                    <x-forum::button-secondary type="button" data-open-modal="edit-category">
-                        {{ trans('forum::general.edit') }}
-                    </x-forum::button-secondary>
+                    @can ('edit', $category)
+                        <x-forum::button-secondary type="button" data-open-modal="edit-category">
+                            {{ trans('forum::general.edit') }}
+                        </x-forum::button-secondary>
+                    @endcan
                 @endcan
             </x-forum::button-group>
         </div>
@@ -167,10 +169,14 @@
     @endif
 
     @can ('editCategories')
-        @include ('forum::category.modals.edit')
+        @can ('edit', $category)
+            @include ('forum::category.modals.edit')
+        @endcan
     @endcan
     @can ('deleteCategories')
-        @include ('forum::category.modals.delete')
+        @can ('delete', $category)
+            @include ('forum::category.modals.delete')
+        @endcan
     @endcan
 
     <script type="module">
