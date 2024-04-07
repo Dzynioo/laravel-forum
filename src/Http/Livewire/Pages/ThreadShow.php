@@ -50,11 +50,11 @@ class ThreadShow extends EventfulPaginatedComponent
         }
     }
 
-    public function delete(Request $request, bool $permadelete): array
+    public function delete(Request $request, bool $permadelete)
     {
         $this->thread = $this->threadEditForm->delete($request, $this->thread, $permadelete);
 
-        return $this->pluralAlert('threads.deleted')->toLivewire();
+        return $this->redirect($this->thread->category->route);
     }
 
     public function restore(Request $request): array
