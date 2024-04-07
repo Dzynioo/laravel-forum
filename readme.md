@@ -56,7 +56,7 @@ A `forum:preset-install {name}` command is available for installing UI presets. 
 
 #### Configuration
 
-Several configuration files are published to your application's config directory, each prefixed with `forum.`. Refer to these for a variety of options for changing the behaviour of the forum and how it integrates with key parts of your application code.
+Several configuration files are published to `config/forum`. Refer to these for a variety of options for changing the behaviour of the forum and how it integrates with key parts of your application code.
 
 > [!NOTE]  
 > You may need to modify the `forum.integration.user_name` config option according to your user model. This specifies which attribute on the user model should be used as a display name in the forum views.
