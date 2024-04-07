@@ -32,7 +32,7 @@ class ThreadCreate extends Component
         $this->category = $request->route('category');
         $this->breadcrumbs_append = [trans('forum::threads.new_thread')];
 
-        if (!CategoryAuthorization::createThreads($request->user(), $this->category)) {
+        if (!$request->user() || !CategoryAuthorization::createThreads($request->user(), $this->category)) {
             abort(403);
         }
 
@@ -41,7 +41,7 @@ class ThreadCreate extends Component
 
     public function create(Request $request)
     {
-        if (!CategoryAuthorization::createThreads($request->user(), $this->category)) {
+        if (!$request->user() || !CategoryAuthorization::createThreads($request->user(), $this->category)) {
             abort(403);
         }
 
