@@ -19,7 +19,7 @@ class CategoryAccess
 
     public static function getPrivateAncestor(?User $user, Category $category): ?Category
     {
-        return $user && $user->can('manageCategories')
+        return $user && $user->can('editCategories')
             ? Category::defaultOrder()
                 ->where('is_private', true)
                 ->ancestorsOf($category->id)
