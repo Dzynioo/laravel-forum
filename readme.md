@@ -22,10 +22,10 @@ See the [support policy in the Laravel docs](https://laravel.com/docs/11.x/relea
 Install the package via composer:
 
 ```
-composer require riari/laravel-forum:~5.0
+composer require riari/laravel-forum:^6.0
 ```
 
-[Package Discovery](https://laravel.com/docs/11.x/packages#package-discovery) should take care of registering the service provider automatically, but if you need to do so manually, add the service provider to your `config/app.php`:
+[Package Discovery](https://laravel.com/docs/11.x/packages#package-discovery) should take care of registering the service provider automatically, but if you need to do so manually, add the service provider to your `bootstrap/providers.php`:
 
 ```php
 TeamTeaTime\Forum\ForumServiceProvider::class,
@@ -48,6 +48,9 @@ Run your migrations:
 A `forum:preset-install {name}` command is available for installing UI presets. Run `forum:preset-list` to see a list of available presets. You must install one of these to publish the corresponding views to your application. For example:
 
 `php artisan forum:preset-install livewire-tailwind`
+
+> [!NOTE]  
+> By default, the `livewire-tailwind` preset is set as the active one in the `forum.frontend.preset` config value. This preset requires Livewire and a few other dependencies. Refer to [UI Presets](/docs/laravel-forum/6.x/front-end/ui-presets) for details.
 
 ### Additional steps
 
