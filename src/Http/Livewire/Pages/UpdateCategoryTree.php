@@ -23,7 +23,7 @@ class UpdateCategoryTree extends Component
 
     public function mount(Request $request)
     {
-        if (!CategoryAuthorization::move($request->user())) {
+        if (!$request->user() || !CategoryAuthorization::move($request->user())) {
             abort(404);
         }
 
