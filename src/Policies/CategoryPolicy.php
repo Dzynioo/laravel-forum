@@ -18,11 +18,6 @@ class CategoryPolicy
         return true;
     }
 
-    public function move(User $user, Category $category): bool
-    {
-        return true;
-    }
-
     public function delete(User $user, Category $category): bool
     {
         return true;
