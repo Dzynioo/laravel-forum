@@ -2,7 +2,7 @@
 
 ![Laravel Forum Logo](./logo.png)
 
-**Complete documentation is available on [teamteatime.net](https://www.teamteatime.net/docs/laravel-forum/6/).**
+**Complete documentation is available on [teamteatime.net](https://www.teamteatime.net/).**
 
 ## Versions
 

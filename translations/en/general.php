@@ -11,7 +11,7 @@ return [
     'color_light_mode' => 'Color (light mode)',
     'color_dark_mode' => 'Color (dark mode)',
     'confirm_action' => 'Confirm action',
-    'confirm_mark_all_read' => 'Are you sure you want to mark all threads as read?',
+    'generic_confirm' => 'Are you sure?',
     'delete' => 'Delete',
     'deleted' => 'Deleted',
     'description' => 'Description',
