@@ -50,7 +50,7 @@ A `forum:preset-install {name}` command is available for installing UI presets. 
 `php artisan forum:preset-install livewire-tailwind`
 
 > [!NOTE]  
-> By default, the `livewire-tailwind` preset is set as the active one in the `forum.frontend.preset` config value. This preset requires Livewire and a few other dependencies. Refer to [UI Presets](/docs/laravel-forum/6.x/front-end/ui-presets) for details.
+> By default, the `livewire-tailwind` preset is set as the active one in the `forum.frontend.preset` config value. This preset requires Livewire and a few other dependencies. Refer to [UI Presets](https://www.teamteatime.net/docs/laravel-forum/6.x/front-end/ui-presets) for details.
 
 ### Additional steps
 
