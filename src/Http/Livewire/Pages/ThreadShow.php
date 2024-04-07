@@ -130,7 +130,7 @@ class ThreadShow extends EventfulPaginatedComponent
             abort(403);
         }
 
-        $action = new DeletePosts($postIds, $this->shouldPermaDelete($permadelete));
+        $action = new DeletePosts($postIds, $request->user()->can('viewTrashedPosts'), $this->shouldPermaDelete($permadelete));
         $result = $action->execute();
 
         $this->touchUpdateKey();
