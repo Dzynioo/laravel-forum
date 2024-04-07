@@ -17,17 +17,13 @@ class ThreadReplyForm extends Form
 {
     public string $content = '';
 
-    public function reply(Request $request, Thread $thread): Post
+    public function reply(Request $request, Thread $thread, ?Post $parent = null): Post
     {
         if (!ThreadAuthorization::reply($request->user(), $thread)) {
             abort(403);
         }
 
         $validated = $this->validate(PostRules::create());
-        $parent = $request->has('parent_id')
-            ? $thread->posts->find($request->input('parent_id'))
-            : null;
-
         $action = new CreatePost($thread, $parent, $request->user(), $validated['content']);
         $post = $action->execute();
 
