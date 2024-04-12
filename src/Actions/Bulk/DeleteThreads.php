@@ -3,9 +3,12 @@
 namespace TeamTeaTime\Forum\Actions\Bulk;
 
 use Illuminate\Support\Facades\DB;
-use TeamTeaTime\Forum\Actions\BaseAction;
-use TeamTeaTime\Forum\Models\BaseModel;
-use TeamTeaTime\Forum\Models\Thread;
+use TeamTeaTime\Forum\{
+    Actions\BaseAction,
+    Models\BaseModel,
+    Models\Post,
+    Models\Thread,
+};
 
 class DeleteThreads extends BaseAction
 {
@@ -81,6 +84,10 @@ class DeleteThreads extends BaseAction
             }
 
             $category->update($updates);
+        }
+
+        if ($this->permaDelete) {
+            Post::whereIn('thread_id', $this->threadIds)->withTrashed()->forceDelete();
         }
 
         return $threads;
