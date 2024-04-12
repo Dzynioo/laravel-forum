@@ -10,6 +10,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 use TeamTeaTime\Forum\{
     Actions\EditCategory,
+    Actions\DeleteCategory,
     Events\UserDeletedCategory,
     Events\UserEditingCategory,
     Events\UserEditedCategory,
@@ -90,7 +91,8 @@ class CategoryEdit extends Component
             abort(403);
         }
 
-        $this->category->delete();
+        $action = new DeleteCategory($this->category);
+        $action->execute();
 
         UserDeletedCategory::dispatch($request->user(), $this->category);
 
