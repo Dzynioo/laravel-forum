@@ -54,7 +54,7 @@ class ThreadShow extends EventfulPaginatedComponent
     {
         $this->thread = $this->threadEditForm->delete($request, $this->thread, $permadelete);
 
-        return $this->redirect($this->thread->category->route);
+        return $this->redirect($permadelete ? $this->thread->category->route : $this->thread->route);
     }
 
     public function restore(Request $request): array
