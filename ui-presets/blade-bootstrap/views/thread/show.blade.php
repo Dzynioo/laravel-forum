@@ -331,7 +331,7 @@
                         <label class="input-group-text" for="category-id">{{ trans_choice('forum::categories.category', 1) }}</label>
                     </div>
                     <select name="category_id" id="category-id" class="form-select">
-                        @include ('forum::category.partials.options', ['categories' => $threadDestinationCategories, 'hide' => $thread->category])
+                        @include ('forum::category.partials.options', ['hide' => $thread->category])
                     </select>
                 </div>
 
