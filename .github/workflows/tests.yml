@@ -14,8 +14,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Bring up MySQL service
-        run: docker-compose up -d mysql
+        run: docker compose up -d mysql
       - name: Run Composer install
-        run: docker-compose run composer install
+        run: docker compose run composer install
       - name: Run PHPUnit
-        run: docker-compose run phpunit
+        run: docker compose run phpunit
