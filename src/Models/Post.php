@@ -51,13 +51,4 @@ class Post extends BaseModel
 
         return $query->where('updated_at', '>', date('Y-m-d H:i:s', $cutoff))->orderBy('updated_at', 'desc');
     }
-
-    public function getSequenceNumber(): int
-    {
-        foreach ($this->thread->posts as $index => $post) {
-            if ($post->id == $this->id) {
-                return $index + 1;
-            }
-        }
-    }
 }
